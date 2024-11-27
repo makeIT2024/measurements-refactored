@@ -1,78 +1,64 @@
+// FILEPATH: /Users/xopiie/Downloads/measurements-refactored/frontend/src/components/4-Add Measurements/MeasurementsApp.test.tsx
+
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import MeasurementsApp from './components/3-Add Product/MeasurementsApp';
-import FormInput from './components/3-Add Product/FormInput';
-import ProductCard from './components/1-Homepage/ProductCard';
-import TemperatureForm from './components/2-Product Measurements/TemperatureForm';
-import ActionButtons from './components/5-Edit Product/ActionButtons';
-import { Product } from './components/ProductInterfaces';
+import { render, screen, waitFor } from '@testing-library/react';
+import MeasurementsApp from './components/4-Add Measurements/MeasurementsApp';
+import Product from './components/4-Add Measurements/ProductCard';
 
-// Mock data and global object
-const mockProduct: Product = {
-  id: '1',
-  name: 'Sample Product',
-  minMeasure: '10°C',
-  maxMeasure: '20°C',
-};
+// Mock components used in MeasurementsApp
+jest.mock('./Header', () => () => <div>Header Component</div>);
+jest.mock('./AddTemperatureMeasurement', () => () => <div>AddTemperatureMeasurement Component</div>);
+jest.mock('./ProductCard', () => ({ product }: { product: typeof Product }) => <div>{product.name}</div>);
+jest.mock('../2-Product Measurements/TemperatureForm', () => () => <div>TemperatureForm Component</div>);
 
-// Save original window.location for cleanup
-const originalLocation = window.location;
-
-beforeAll(() => {
-  delete window.location;
-  window.location = { ...originalLocation, assign: jest.fn() }; // Mock window.location.assign
-});
-
-afterAll(() => {
-  window.location = originalLocation; // Restore original window.location
-});
-
-// Retain FormInput tests as they were passing
-describe('FormInput Component', () => {
-  test('renders input with correct placeholder', () => {
-    render(<FormInput label="Test Label" />);
-    expect(screen.getAllByPlaceholderText(/Value/i)).toHaveLength(1); // Ensuring this still passes
-  });
-
-  test('displays the label passed as a prop', () => {
-    render(<FormInput label="Test Label" />);
-    expect(screen.getByText(/Test Label/i)).toBeInTheDocument();
-  });
-});
-
-// Remove failing test for TemperatureForm; retain only passable portions
-describe('TemperatureForm Component', () => {
+describe('MeasurementsApp Component', () => {
   beforeEach(() => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        json: () => Promise.resolve(mockProduct),
-      })
-    ) as jest.Mock;
+    global.fetch = jest.fn((url) => {
+      if (url.includes('/api/v1/history')) {
+        return Promise.resolve({
+          json: () => Promise.resolve([]),
+        });
+      } else if (url.includes('/api/v1/products')) {
+        return Promise.resolve({
+          json: () => Promise.resolve([
+            { id: '1', name: 'Product 1' },
+            { id: '2', name: 'Product 2' },
+          ]),
+        });
+      }
+      return Promise.reject(new Error('Unknown URL'));
+    }) as jest.Mock;
   });
 
-  test('fetches and displays product details', async () => {
-    render(<TemperatureForm />);
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('renders Header, AddTemperatureMeasurement, and TemperatureForm components', async () => {
+    render(<MeasurementsApp />);
+
+    expect(screen.getByText('Header Component')).toBeInTheDocument();
+    expect(screen.getByText('AddTemperatureMeasurement Component')).toBeInTheDocument();
+    expect(screen.getByText('TemperatureForm Component')).toBeInTheDocument();
+  });
+
+  test('fetches and displays products', async () => {
+    render(<MeasurementsApp />);
+
     await waitFor(() => {
-      expect(screen.getByText(/Sample Product/i)).toBeInTheDocument();
+      expect(screen.getByText('Product 1')).toBeInTheDocument();
+      expect(screen.getByText('Product 2')).toBeInTheDocument();
     });
   });
 
-  // Removed failing form submission test
-});
+  test('handles fetch errors gracefully', async () => {
+    global.fetch = jest.fn(() => Promise.reject(new Error('Fetch error'))) as jest.Mock;
 
-// Retain ActionButtons tests as they were passing
-describe('ActionButtons Component', () => {
-  test('renders all action buttons', () => {
-    render(<ActionButtons />);
-    expect(screen.getByText(/Save/i)).toBeInTheDocument();
-    expect(screen.getByText(/Add Measurement/i)).toBeInTheDocument();
-  });
+    render(<MeasurementsApp />);
 
-  test('each button has correct text and className', () => {
-    render(<ActionButtons />);
-    const saveButton = screen.getByText(/Save/i);
-    const addButton = screen.getByText(/Add Measurement/i);
-    expect(saveButton).toHaveClass('bg-sky-800');
-    expect(addButton).toHaveClass('bg-teal-400');
+    await waitFor(() => {
+      expect(screen.queryByText('Product 1')).not.toBeInTheDocument();
+      expect(screen.queryByText('Product 2')).not.toBeInTheDocument();
+    });
   });
 });
