@@ -6,10 +6,10 @@ import MeasurementsApp from './components/4-Add Measurements/MeasurementsApp';
 import Product from './components/4-Add Measurements/ProductCard';
 
 // Mock components used in MeasurementsApp
-jest.mock('./Header', () => () => <div>Header Component</div>);
-jest.mock('./AddTemperatureMeasurement', () => () => <div>AddTemperatureMeasurement Component</div>);
-jest.mock('./ProductCard', () => ({ product }: { product: typeof Product }) => <div>{product.name}</div>);
-jest.mock('../2-Product Measurements/TemperatureForm', () => () => <div>TemperatureForm Component</div>);
+jest.mock('./components/4-Add Measurements/Header', () => () => <div>Header Component</div>);
+jest.mock('./components/4-Add Measurements/AddTemperatureMeasurement', () => () => <div>AddTemperatureMeasurement Component</div>);
+jest.mock('./components/4-Add <Measurements/ProductCard', () => ({ product }: { product: typeof Product }) => <div>{product.name}</div>);
+jest.mock('./componenrs/2-Product Measurements/TemperatureForm', () => () => <div>TemperatureForm Component</div>);
 
 describe('MeasurementsApp Component', () => {
   beforeEach(() => {
