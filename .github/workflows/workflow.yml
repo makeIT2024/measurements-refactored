@@ -9,6 +9,32 @@ on:
       - '**'
 
 jobs:
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Run tests
+        run: npm test -- --watchAll=false
+        working-directory: frontend
+
+      - name: Build application
+        run: npm run build
+        working-directory: frontend
+        
   sonarcloud-scan:
     name: SonarQube Scan
     runs-on: ubuntu-latest
